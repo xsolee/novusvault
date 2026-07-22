@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx --yes create-expo-app@latest company-vault-frontend --template blank-typescript)",
+      "Bash(npx --yes expo install expo-router expo-linking expo-constants expo-status-bar react-native-safe-area-context react-native-screens react-native-web react-dom expo-secure-store expo-web-browser expo-font)",
+      "Bash(npm install *)",
+      "Bash(npx --yes expo install expo-router expo-linking expo-constants expo-status-bar react-native-safe-area-context react-native-screens react-native-web react-dom expo-secure-store expo-web-browser expo-font expo-system-ui)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(npm run *)",
+      "Bash(npx --yes expo install expo-asset)",
+      "Bash(grep -v \"console.error\\\\|act\\(...\\)\\\\|Learn more\\\\|at node_modules\\\\|at Object\\\\|at asyncGeneratorStep\\\\|at _next\\\\|^$\")",
+      "Bash(npx expo *)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8090 --max-time 3)",
+      "Skill(claude-in-chrome)",
+      "Bash(docker *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8091/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8091/documents/doc-1)",
+      "Bash(curl -s http://localhost:8091/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8081 --max-time 5)",
+      "Bash(curl *)"
+    ]
+  }
+}

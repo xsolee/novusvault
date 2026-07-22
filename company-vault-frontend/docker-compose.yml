@@ -1,0 +1,37 @@
+services:
+  # Dev server for the web target, source bind-mounted from the host.
+  #
+  # NOTE: true hot reload does NOT work here on Docker Desktop for Windows —
+  # bind-mounting a Windows path into the Linux container doesn't reliably
+  # propagate filesystem-change events to Metro's watcher (verified: edits
+  # were served stale until the process restarted; webpack-style polling env
+  # vars don't fix this for Metro). After editing source, run:
+  #   docker compose restart dev
+  # then refresh the browser.
+  dev:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "8081:8081"
+    environment:
+      EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+      EXPO_PUBLIC_APP_NAME: ${EXPO_PUBLIC_APP_NAME:-Company Vault}
+      CI: "false"
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules
+
+  # Production-style build: static web export served by nginx.
+  web:
+    build:
+      context: .
+      target: serve
+      args:
+        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+        EXPO_PUBLIC_APP_NAME: ${EXPO_PUBLIC_APP_NAME:-Company Vault}
+    ports:
+      - "8080:80"
+
+volumes:
+  dev_node_modules:
