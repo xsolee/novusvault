@@ -17,12 +17,15 @@ const queryClient = new QueryClient({
 });
 
 function ThemedApp() {
-  const { scheme } = useTheme();
+  const { scheme, colors } = useTheme();
 
   return (
     <ToastProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* React Navigation's native-stack defaults each screen's content
+          container to a white background regardless of theme, so it must be
+          set explicitly here per scheme. */}
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="(app)" />

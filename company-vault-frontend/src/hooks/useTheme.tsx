@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SystemUI from 'expo-system-ui';
 import {
   darkColors,
   darkDepartmentColors,
@@ -43,6 +44,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const scheme: Scheme = preference ?? (systemScheme === 'dark' ? 'dark' : 'light');
+  const bg = (scheme === 'dark' ? darkColors : lightColors).bg;
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // React Native styles never reach the raw <html>/<body>; without this,
+      // overscroll/viewport gaps stay whatever +html.tsx last painted, which
+      // only tracks OS scheme, not this in-app override.
+      document.documentElement.style.backgroundColor = bg;
+      document.body.style.backgroundColor = bg;
+      document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+        meta.setAttribute('content', bg);
+      });
+    } else {
+      SystemUI.setBackgroundColorAsync(bg).catch(() => {
+        // Non-fatal: native root background falls back to the OS default.
+      });
+    }
+  }, [bg]);
 
   const setScheme = useCallback((next: Scheme) => {
     setPreference(next);

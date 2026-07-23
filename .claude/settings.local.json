@@ -20,7 +20,13 @@
       "Bash(curl -s http://localhost:8091/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8081 --max-time 5)",
       "Bash(curl *)",
-      "Artifact"
+      "Artifact",
+      "PowerShell(docker compose up *)",
+      "PowerShell(docker ps --filter \"name=company-vault-frontend-web\"; Invoke-WebRequest -Uri http://localhost:8080 -UseBasicParsing | Select-Object StatusCode)",
+      "PowerShell(Invoke-WebRequest -Uri http://localhost:8080 -UseBasicParsing | Select-Object -ExpandProperty Content)",
+      "PowerShell(Out-Null *)",
+      "PowerShell(docker run *)",
+      "PowerShell(Select-String *)"
     ]
   }
 }

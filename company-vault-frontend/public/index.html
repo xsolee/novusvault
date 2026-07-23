@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>%WEB_TITLE%</title>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+    <!--
+      React Native styles never reach the raw <html>/<body>. Without this,
+      overscroll/viewport gaps and the pre-hydration paint stay browser-default
+      white even when the app is in dark mode, and dark-theme (near-white) text
+      becomes unreadable on it. `useTheme` overrides `document.body`'s inline
+      background once the app mounts and knows the user's stored preference;
+      this covers the system-default first paint before that runs.
+    -->
+    <!-- Values mirror lightColors.bg / darkColors.bg in src/constants/theme.ts; keep in sync. -->
+    <style id="theme-background">
+      html,
+      body {
+        background-color: #F7F7FB;
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background-color: #101012;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>
