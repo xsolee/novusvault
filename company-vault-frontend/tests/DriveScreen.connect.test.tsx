@@ -17,6 +17,6 @@ describe('DriveScreen (starts disconnected)', () => {
 
     await fireEvent.press(screen.getByText('Connect Google Drive'));
 
-    await waitFor(() => expect(screen.getByText('Connected')).toBeTruthy(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByText(/Connected as/)).toBeTruthy(), { timeout: 5000 });
   });
 });

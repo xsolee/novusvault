@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -9,12 +9,15 @@ import { LoadingIndicator } from '@/components/feedback/LoadingIndicator';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { ConfirmDialog } from '@/components/feedback/ConfirmDialog';
 import { useToast } from '@/components/feedback/ToastProvider';
+import { useTheme } from '@/hooks/useTheme';
 import { useConnectDrive, useDisconnectDrive, useDriveStatus, useSelectDriveFolder } from './useDrive';
 import { useStartSync } from './useSync';
 import { FolderSelector } from './FolderSelector';
 import { SyncPanel } from './SyncPanel';
 
 export function DriveScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: drive, isLoading, isError, refetch } = useDriveStatus();
   const connectMutation = useConnectDrive();
   const disconnectMutation = useDisconnectDrive();
@@ -27,6 +30,9 @@ export function DriveScreen() {
 
   if (isLoading) return <LoadingIndicator />;
   if (isError || !drive) return <ErrorState onRetry={refetch} />;
+
+  const connected = drive.state === 'CONNECTED';
+  const hasFolder = !!drive.rootFolder;
 
   const handleConnect = async () => {
     try {
@@ -66,82 +72,147 @@ export function DriveScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <ScreenHeader title="Google Drive" subtitle="Manage the connection Company Vault uses as its document source." />
+      <ScreenHeader
+        title="Sources"
+        subtitle="Where Company Vault gets its knowledge. One Drive folder, synced on demand."
+      />
 
-      <View style={styles.body}>
-        {drive.state === 'NOT_CONNECTED' || drive.state === 'FAILED' ? (
-          <Card style={styles.centeredCard}>
-            {drive.state === 'FAILED' ? (
-              <View style={styles.failedBanner}>
-                <Ionicons name="warning-outline" size={16} color={colors.danger} />
-                <Text style={styles.failedText}>The last connection attempt failed. Please try again.</Text>
-              </View>
-            ) : null}
-            <View style={styles.cloudIcon}>
-              <Ionicons name="cloud-outline" size={28} color={colors.primary} />
-            </View>
-            <Text style={typography.h2}>Connect your Google Drive</Text>
-            <Text style={styles.explainer}>
-              Company Vault uses a single Google Drive folder as its document source. Once connected,
-              you'll choose one root folder to index — files in its subfolders are included automatically.
-            </Text>
-            <Button
-              label="Connect Google Drive"
-              icon="logo-google"
-              onPress={handleConnect}
-              loading={connectMutation.isPending}
-              style={{ marginTop: spacing.md }}
+      <View style={styles.grid}>
+        <Card style={styles.panel}>
+          <Text style={[typography.h3, { color: colors.text }]}>Google Drive</Text>
+          <Text style={styles.panelSub}>
+            {connected ? `Connected as ${drive.googleAccountEmail}` : 'Not connected yet'}
+          </Text>
+
+          <View style={styles.steps}>
+            <Step
+              index={1}
+              done={connected}
+              label="Connect your Google account"
+              detail="Read-only access, handled entirely by the backend"
+              styles={styles}
+              colors={colors}
             />
-            <View style={styles.privacyNote}>
-              <Ionicons name="lock-closed-outline" size={14} color={colors.textFaint} />
-              <Text style={styles.privacyText}>
-                Document access is handled entirely by our backend — this app never receives your Google
-                credentials or files directly.
+            <Step
+              index={2}
+              done={hasFolder}
+              label="Choose a folder"
+              detail="Everything inside it becomes searchable"
+              styles={styles}
+              colors={colors}
+            />
+            <Step
+              index={3}
+              done={!!drive.lastSyncedAt}
+              label="Sync"
+              detail="Run it whenever documents change"
+              styles={styles}
+              colors={colors}
+            />
+          </View>
+
+          {drive.state === 'FAILED' ? (
+            <View style={styles.failedBanner}>
+              <Ionicons name="warning-outline" size={16} color={colors.danger} />
+              <Text style={[typography.caption, { color: colors.danger, flexShrink: 1 }]}>
+                The last connection attempt failed. Please try again.
               </Text>
             </View>
-          </Card>
-        ) : (
-          <>
-            <Card>
-              <View style={styles.connectedHeader}>
-                <View style={styles.connectedBadge}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-                  <Text style={styles.connectedText}>Connected</Text>
+          ) : null}
+
+          {!connected ? (
+            <>
+              <Button
+                label="Connect Google Drive"
+                icon="logo-google"
+                onPress={handleConnect}
+                loading={connectMutation.isPending}
+                style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+              />
+              <View style={styles.privacyNote}>
+                <Ionicons name="lock-closed-outline" size={14} color={colors.textFaint} />
+                <Text style={styles.privacyText}>
+                  This app never receives your Google credentials or files directly.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.folderRow}>
+                <View style={styles.folderIcon}>
+                  <Ionicons name="folder" size={18} color={colors.primary} />
                 </View>
-                <Text style={styles.accountEmail}>{drive.googleAccountEmail}</Text>
-              </View>
-
-              <View style={styles.infoGrid}>
-                <InfoItem label="Root folder" value={drive.rootFolder?.name ?? 'Not selected'} />
-                <InfoItem
-                  label="Last synchronization"
-                  value={drive.lastSyncedAt ? new Date(drive.lastSyncedAt).toLocaleString() : 'Never'}
-                />
-                <InfoItem label="Files discovered" value={String(drive.totalFilesDiscovered)} />
-                <InfoItem label="Indexed" value={String(drive.totalIndexed)} />
-                <InfoItem label="Failed" value={String(drive.totalFailed)} />
-              </View>
-
-              <View style={styles.actionsRow}>
-                <Button label="Select Folder" variant="secondary" icon="folder-open-outline" onPress={() => setFolderPickerOpen(true)} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[typography.captionMedium, { color: colors.text }]} numberOfLines={1}>
+                    {drive.rootFolder?.name ?? 'No folder selected'}
+                  </Text>
+                  <Text style={[typography.tiny, { fontWeight: '400', color: colors.textFaint }]} numberOfLines={1}>
+                    {hasFolder
+                      ? `Root folder · ${drive.totalFilesDiscovered} files discovered`
+                      : 'Choose the folder Vault should index'}
+                  </Text>
+                </View>
                 <Button
-                  label="Sync Documents"
-                  icon="refresh"
-                  onPress={handleSync}
-                  loading={startSync.isPending}
-                  disabled={!drive.rootFolder}
+                  label={hasFolder ? 'Change folder' : 'Select folder'}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setFolderPickerOpen(true)}
                 />
-                <Button label="Disconnect" variant="danger" icon="unlink-outline" onPress={() => setDisconnectConfirmOpen(true)} />
               </View>
-            </Card>
+              <Button
+                label="Disconnect Drive"
+                variant="ghost"
+                size="sm"
+                icon="unlink-outline"
+                onPress={() => setDisconnectConfirmOpen(true)}
+                style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
+              />
+            </>
+          )}
+        </Card>
 
-            {startSync.activeRunId ? (
-              <View style={{ marginTop: spacing.md }}>
-                <SyncPanel runId={startSync.activeRunId} />
+        <Card style={styles.panel}>
+          <Text style={[typography.h3, { color: colors.text }]}>Synchronization</Text>
+          <Text style={styles.panelSub}>Manual sync — new files are picked up, nothing is ever deleted</Text>
+
+          <View style={styles.syncCta}>
+            <Button
+              label="Sync now"
+              icon="refresh"
+              onPress={handleSync}
+              loading={startSync.isPending}
+              disabled={!connected || !hasFolder}
+            />
+            {drive.lastSyncedAt ? (
+              <View style={styles.syncStatus}>
+                <View style={[styles.syncDot, { backgroundColor: colors.accent }]} />
+                <Text style={[typography.caption, { color: colors.accent }]}>
+                  Last synced {new Date(drive.lastSyncedAt).toLocaleString()}
+                </Text>
               </View>
-            ) : null}
-          </>
-        )}
+            ) : (
+              <Text style={[typography.caption, { color: colors.textFaint }]}>Never synced</Text>
+            )}
+          </View>
+
+          <View style={styles.statsStrip}>
+            <SyncStat value={drive.totalFilesDiscovered} label="Discovered" styles={styles} colors={colors} />
+            <SyncStat value={drive.totalIndexed} label="Indexed" styles={styles} colors={colors} />
+            <SyncStat
+              value={drive.totalFailed}
+              label="Failed"
+              tone={drive.totalFailed > 0 ? colors.danger : undefined}
+              styles={styles}
+              colors={colors}
+            />
+          </View>
+
+          {startSync.activeRunId ? (
+            <View style={{ marginTop: spacing.md }}>
+              <SyncPanel runId={startSync.activeRunId} />
+            </View>
+          ) : null}
+        </Card>
       </View>
 
       <FolderSelector
@@ -165,117 +236,182 @@ export function DriveScreen() {
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function Step({
+  index,
+  done,
+  label,
+  detail,
+  styles,
+  colors,
+}: {
+  index: number;
+  done: boolean;
+  label: string;
+  detail: string;
+  styles: ReturnType<typeof createStyles>;
+  colors: ThemeColors;
+}) {
   return (
-    <View style={styles.infoItem}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>
-        {value}
-      </Text>
+    <View style={styles.stepRow}>
+      <View style={[styles.stepBadge, done && { backgroundColor: colors.accentSoft, borderColor: 'transparent' }]}>
+        {done ? (
+          <Ionicons name="checkmark" size={13} color={colors.accent} />
+        ) : (
+          <Text style={[typography.tiny, { color: colors.textFaint }]}>{index}</Text>
+        )}
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={[typography.captionMedium, { color: done ? colors.text : colors.textMuted }]}>{label}</Text>
+        <Text style={[typography.tiny, { fontWeight: '400', color: colors.textFaint }]}>{detail}</Text>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingBottom: spacing.xxl,
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-  },
-  centeredCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  cloudIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  explainer: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 420,
-    marginTop: spacing.xs,
-  },
-  privacyNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-    marginTop: spacing.lg,
-    maxWidth: 420,
-  },
-  privacyText: {
-    ...typography.caption,
-    color: colors.textFaint,
-    flexShrink: 1,
-  },
-  failedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.md,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.sm,
-    width: '100%',
-  },
-  failedText: {
-    ...typography.caption,
-    color: colors.danger,
-  },
-  connectedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  connectedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.pill,
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-  },
-  connectedText: {
-    ...typography.captionMedium,
-    color: colors.accent,
-  },
-  accountEmail: {
-    ...typography.caption,
-    color: colors.textFaint,
-  },
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.lg,
-    marginTop: spacing.md,
-  },
-  infoItem: {
-    minWidth: 130,
-  },
-  infoLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-  },
-  infoValue: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    marginTop: 2,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.lg,
-  },
-});
+function SyncStat({
+  value,
+  label,
+  tone,
+  styles,
+  colors,
+}: {
+  value: number;
+  label: string;
+  tone?: string;
+  styles: ReturnType<typeof createStyles>;
+  colors: ThemeColors;
+}) {
+  return (
+    <View style={styles.statCell}>
+      <Text style={[typography.h2, { color: tone ?? colors.text }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    content: {
+      paddingBottom: spacing.xxl,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'flex-start',
+    },
+    panel: {
+      flex: 1,
+      minWidth: 320,
+    },
+    panelSub: {
+      ...typography.caption,
+      color: colors.textFaint,
+      marginTop: 2,
+      marginBottom: spacing.sm,
+    },
+    steps: {
+      gap: spacing.xs + 2,
+      marginBottom: spacing.sm,
+    },
+    stepRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+    },
+    stepBadge: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 1,
+    },
+    failedBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.dangerSoft,
+      borderRadius: radius.md,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      marginBottom: spacing.xs,
+    },
+    privacyNote: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 6,
+      marginTop: spacing.sm,
+    },
+    privacyText: {
+      ...typography.tiny,
+      fontWeight: '400',
+      color: colors.textFaint,
+      flexShrink: 1,
+    },
+    folderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingVertical: spacing.xs + 2,
+      paddingHorizontal: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    folderIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.sm + 1,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    syncCta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    syncStatus: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    syncDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+    },
+    statsStrip: {
+      flexDirection: 'row',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+    },
+    statCell: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm + 2,
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    statLabel: {
+      ...typography.tiny,
+      color: colors.textFaint,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 2,
+    },
+  });

@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { radius, shadow, spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 type ToastVariant = 'success' | 'error' | 'info';
 
@@ -17,13 +18,14 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const VARIANT_STYLES: Record<ToastVariant, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  success: { icon: 'checkmark-circle', color: colors.accent },
-  error: { icon: 'alert-circle', color: colors.danger },
-  info: { icon: 'information-circle', color: colors.info },
+const VARIANT_ICON: Record<ToastVariant, keyof typeof Ionicons.glyphMap> = {
+  success: 'checkmark-circle',
+  error: 'alert-circle',
+  info: 'information-circle',
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { colors } = useTheme();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idRef = useRef(0);
 
@@ -37,25 +39,35 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({ show }), [show]);
 
+  const variantColor: Record<ToastVariant, string> = {
+    success: colors.accent,
+    error: colors.danger,
+    info: colors.info,
+  };
+
   return (
     <ToastContext.Provider value={value}>
       {children}
       <View pointerEvents="box-none" style={styles.container}>
-        {toasts.map((toast) => {
-          const variant = VARIANT_STYLES[toast.variant];
-          return (
-            <View key={toast.id} style={[styles.toast, shadow.popover]}>
-              <Ionicons name={variant.icon} size={18} color={variant.color} />
-              <Text style={styles.text}>{toast.message}</Text>
-              <Pressable
-                onPress={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-                hitSlop={8}
-              >
-                <Ionicons name="close" size={16} color={colors.textFaint} />
-              </Pressable>
-            </View>
-          );
-        })}
+        {toasts.map((toast) => (
+          <View
+            key={toast.id}
+            style={[
+              styles.toast,
+              shadow.popover,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons name={VARIANT_ICON[toast.variant]} size={18} color={variantColor[toast.variant]} />
+            <Text style={[typography.body, styles.text, { color: colors.text }]}>{toast.message}</Text>
+            <Pressable
+              onPress={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={16} color={colors.textFaint} />
+            </Pressable>
+          </View>
+        ))}
       </View>
     </ToastContext.Provider>
   );
@@ -80,17 +92,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     maxWidth: 420,
   },
   text: {
-    ...typography.body,
-    color: colors.text,
     flexShrink: 1,
   },
 });

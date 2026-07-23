@@ -1,19 +1,34 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, typography } from '@/constants/theme';
+import { typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export function Logo({ size = 32, showWordmark = false }: { size?: number; showWordmark?: boolean }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.row}>
       <View
-        style={[
-          styles.mark,
-          { width: size, height: size, borderRadius: size * 0.32 },
-        ]}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size * 0.32,
+          backgroundColor: colors.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        <View style={[styles.markInner, { width: size * 0.42, height: size * 0.42, borderRadius: size * 0.12 }]} />
+        <View
+          style={{
+            width: size * 0.42,
+            height: size * 0.42,
+            borderRadius: size * 0.12,
+            backgroundColor: colors.textInverse,
+            opacity: 0.9,
+          }}
+        />
       </View>
-      {showWordmark ? <Text style={[typography.h3, styles.wordmark]}>Company Vault</Text> : null}
+      {showWordmark ? <Text style={[typography.h3, { color: colors.text }]}>Company Vault</Text> : null}
     </View>
   );
 }
@@ -23,17 +38,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  mark: {
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markInner: {
-    backgroundColor: colors.textInverse,
-    opacity: 0.9,
-  },
-  wordmark: {
-    color: colors.text,
   },
 });

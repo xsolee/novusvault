@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
+import { DepartmentBadge } from '@/components/common/Badge';
 import type { ClarificationSuggestion } from '@/types/domain';
 
 export function ClarificationOptions({
@@ -11,6 +12,9 @@ export function ClarificationOptions({
   suggestions: ClarificationSuggestion[];
   onSelect: (suggestion: ClarificationSuggestion) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.list}>
       {suggestions.map((suggestion) => (
@@ -19,32 +23,35 @@ export function ClarificationOptions({
           onPress={() => onSelect(suggestion)}
           style={({ hovered }: any) => [styles.option, hovered && styles.optionHover]}
         >
-          <Text style={typography.bodyMedium}>{suggestion.label}</Text>
-          <Ionicons name="arrow-forward" size={14} color={colors.primaryText} />
+          <Text style={[typography.captionMedium, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+            {suggestion.label}
+          </Text>
+          <DepartmentBadge department={suggestion.department} />
         </Pressable>
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  optionHover: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    list: {
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.sm + 2,
+      paddingVertical: spacing.xs + 2,
+      paddingHorizontal: spacing.sm + 2,
+    },
+    optionHover: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primarySoft,
+    },
+  });

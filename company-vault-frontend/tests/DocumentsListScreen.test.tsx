@@ -10,7 +10,7 @@ describe('DocumentsListScreen', () => {
     await waitFor(() => expect(screen.getByText('Employee Handbook.pdf')).toBeTruthy(), { timeout: 5000 });
     expect(screen.getByText('Q2 Financial Report.pdf')).toBeTruthy();
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search by filename…'), 'handbook');
+    await fireEvent.changeText(screen.getByPlaceholderText('Search by name, topic, or content…'), 'handbook');
 
     await waitFor(
       () => {

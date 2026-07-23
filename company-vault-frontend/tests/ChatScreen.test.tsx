@@ -7,25 +7,25 @@ describe('ChatScreen', () => {
   it('renders the welcome state with suggested questions', async () => {
     await renderWithProviders(<ChatScreen />);
 
-    expect(screen.getByText('Welcome to Company Vault')).toBeTruthy();
+    expect(screen.getByText('Ask your company anything')).toBeTruthy();
     expect(screen.getByText('What is our maternity leave policy?')).toBeTruthy();
   });
 
-  it('answers a clear question with a detected department and a citation', async () => {
+  it('answers a clear question with a detected department and a cited source', async () => {
     await renderWithProviders(<ChatScreen />);
 
     await fireEvent.press(screen.getByText('What is our maternity leave policy?'));
 
     await waitFor(() => expect(screen.getByText('Employee Handbook.pdf')).toBeTruthy(), { timeout: 5000 });
     expect(screen.getAllByText('Human Resources').length).toBeGreaterThan(0);
-    expect(screen.getByText('Open document')).toBeTruthy();
+    expect(screen.getByText(/Sources ·/)).toBeTruthy();
   });
 
   it('asks for clarification on a broad question and follows a suggestion', async () => {
     await renderWithProviders(<ChatScreen />);
 
     await fireEvent.changeText(
-      screen.getByPlaceholderText('Ask about any company document…'),
+      screen.getByPlaceholderText('Ask a question about your company documents…'),
       'What is the approval process?',
     );
     await fireEvent.press(screen.getByLabelText('Send message'));

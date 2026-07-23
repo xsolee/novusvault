@@ -1,41 +1,50 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@/constants/theme';
-import { Logo } from '@/components/common/Logo';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
+import { useDriveStatus } from '@/features/drive/useDrive';
 import { mockSuggestedQuestions } from '@/mocks/fixtures';
 
-const CARD_ICONS: Array<{ icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = [
-  { icon: 'people-outline', color: '#B4508B', bg: '#FBEAF3' },
-  { icon: 'business-outline', color: '#5138C9', bg: '#EFECFD' },
-  { icon: 'cash-outline', color: '#3D8FE8', bg: '#E7F1FD' },
-  { icon: 'card-outline', color: '#2FA0A0', bg: '#E3F7F5' },
-  { icon: 'document-text-outline', color: '#D97B3E', bg: '#FDF0E4' },
-  { icon: 'briefcase-outline', color: '#8A6D3B', bg: '#F6EFE0' },
-];
+const CHIP_DEPARTMENTS = [
+  'HUMAN_RESOURCES',
+  'LEGAL',
+  'ACCOUNTING',
+  'TREASURY',
+  'GENERAL',
+  'PROCUREMENT',
+] as const;
 
 export function SuggestedQuestions({ onSelect }: { onSelect: (question: string) => void }) {
+  const { colors, departmentColors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { data: drive } = useDriveStatus();
+
+  const indexed = drive?.totalIndexed ?? 0;
+
   return (
     <View style={styles.container}>
-      <Logo size={48} />
-      <Text style={styles.title}>Welcome to Company Vault</Text>
+      <Text style={styles.title}>Ask your company anything</Text>
       <Text style={styles.subtitle}>
-        Ask a question about any indexed company document — HR, Finance, Legal, Procurement, and more.
+        Answers come only from your indexed documents — every claim is cited.
       </Text>
+      {indexed > 0 ? (
+        <Text style={styles.scope}>
+          Searching across <Text style={styles.scopeStrong}>{indexed} documents</Text>
+        </Text>
+      ) : null}
 
-      <View style={styles.grid}>
+      <View style={styles.chips}>
         {mockSuggestedQuestions.map((question, index) => {
-          const style = CARD_ICONS[index % CARD_ICONS.length];
+          const dept = CHIP_DEPARTMENTS[index % CHIP_DEPARTMENTS.length];
+          const deptColor = departmentColors[dept] ?? departmentColors.UNKNOWN;
           return (
             <Pressable
               key={question}
               onPress={() => onSelect(question)}
-              style={({ hovered }: any) => [styles.card, hovered && styles.cardHover]}
+              style={({ hovered }: any) => [styles.chip, hovered && styles.chipHover]}
             >
-              <View style={[styles.cardIcon, { backgroundColor: style.bg }]}>
-                <Ionicons name={style.icon} size={17} color={style.color} />
-              </View>
-              <Text style={styles.cardText} numberOfLines={2}>
+              <View style={[styles.chipDot, { backgroundColor: deptColor.fg }]} />
+              <Text style={styles.chipText} numberOfLines={1}>
                 {question}
               </Text>
             </Pressable>
@@ -46,53 +55,67 @@ export function SuggestedQuestions({ onSelect }: { onSelect: (question: string) 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-  title: {
-    ...typography.display,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 460,
-    marginTop: spacing.xxs,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-    maxWidth: 640,
-  },
-  card: {
-    width: 200,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: spacing.sm,
-  },
-  cardHover: {
-    borderColor: colors.primary,
-  },
-  cardIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  cardText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl,
+    },
+    title: {
+      ...typography.display,
+      fontSize: 26,
+      lineHeight: 34,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: 'center',
+      maxWidth: 460,
+      marginTop: spacing.xxs,
+    },
+    scope: {
+      ...typography.caption,
+      color: colors.textFaint,
+      marginTop: spacing.xs,
+    },
+    scopeStrong: {
+      ...typography.captionMedium,
+      color: colors.textMuted,
+    },
+    chips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.lg,
+      maxWidth: 620,
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.pill,
+      paddingVertical: 7,
+      paddingHorizontal: spacing.sm + 1,
+      maxWidth: '100%',
+    },
+    chipHover: {
+      borderColor: colors.primary,
+    },
+    chipDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    chipText: {
+      ...typography.caption,
+      color: colors.text,
+      flexShrink: 1,
+    },
+  });

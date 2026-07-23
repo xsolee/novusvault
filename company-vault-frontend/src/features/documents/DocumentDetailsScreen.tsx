@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -15,6 +16,8 @@ import { useDocumentDetails, useReprocessDocument } from './useDocuments';
 export function DocumentDetailsScreen({ id }: { id: string }) {
   const router = useRouter();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: doc, isLoading, isError, refetch } = useDocumentDetails(id);
   const reprocess = useReprocessDocument();
   const [contentSearch, setContentSearch] = useState('');
@@ -53,12 +56,12 @@ export function DocumentDetailsScreen({ id }: { id: string }) {
 
       <View style={styles.body}>
         <Card>
-          <Text style={typography.h3}>Overview</Text>
+          <Text style={[typography.h3, { color: colors.text }]}>Overview</Text>
           <View style={styles.overviewGrid}>
-            <Field label="Source" value="Google Drive" />
-            <Field label="Folder" value={doc.folderPath} />
-            <Field label="MIME type" value={doc.mimeType} />
-            <Field label="Indexed date" value={doc.indexedAt ? new Date(doc.indexedAt).toLocaleString() : '—'} />
+            <Field label="Source" value="Google Drive" styles={styles} />
+            <Field label="Folder" value={doc.folderPath} styles={styles} />
+            <Field label="MIME type" value={doc.mimeType} styles={styles} />
+            <Field label="Indexed date" value={doc.indexedAt ? new Date(doc.indexedAt).toLocaleString() : '—'} styles={styles} />
           </View>
           <View style={styles.badgeRow}>
             <DepartmentBadge department={doc.department} />
@@ -75,21 +78,21 @@ export function DocumentDetailsScreen({ id }: { id: string }) {
         </Card>
 
         <Card style={{ marginTop: spacing.md }}>
-          <Text style={typography.h3}>AI-generated metadata</Text>
+          <Text style={[typography.h3, { color: colors.text }]}>AI-generated metadata</Text>
           <View style={styles.overviewGrid}>
-            <Field label="Title" value={doc.metadata.title} />
-            <Field label="Category" value={formatEnumLabel(doc.metadata.category)} />
+            <Field label="Title" value={doc.metadata.title} styles={styles} />
+            <Field label="Category" value={formatEnumLabel(doc.metadata.category)} styles={styles} />
           </View>
-          <Field label="Summary" value={doc.metadata.summary} block />
-          <TagList label="Main topics" items={doc.metadata.topics} />
-          <TagList label="Important dates" items={doc.metadata.importantDates} />
-          <TagList label="People mentioned" items={doc.metadata.people} />
-          <TagList label="Companies mentioned" items={doc.metadata.companies} />
+          <Field label="Summary" value={doc.metadata.summary} block styles={styles} />
+          <TagList label="Main topics" items={doc.metadata.topics} styles={styles} />
+          <TagList label="Important dates" items={doc.metadata.importantDates} styles={styles} />
+          <TagList label="People mentioned" items={doc.metadata.people} styles={styles} />
+          <TagList label="Companies mentioned" items={doc.metadata.companies} styles={styles} />
         </Card>
 
         <Card style={{ marginTop: spacing.md }} padded={false}>
           <View style={styles.extractedHeader}>
-            <Text style={typography.h3}>Extracted content</Text>
+            <Text style={[typography.h3, { color: colors.text }]}>Extracted content</Text>
             <View style={styles.contentSearchBox}>
               <Ionicons name="search" size={14} color={colors.textFaint} />
               <TextInput
@@ -111,7 +114,17 @@ export function DocumentDetailsScreen({ id }: { id: string }) {
   );
 }
 
-function Field({ label, value, block = false }: { label: string; value: string; block?: boolean }) {
+function Field({
+  label,
+  value,
+  block = false,
+  styles,
+}: {
+  label: string;
+  value: string;
+  block?: boolean;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={block ? styles.fieldBlock : styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -120,7 +133,15 @@ function Field({ label, value, block = false }: { label: string; value: string; 
   );
 }
 
-function TagList({ label, items }: { label: string; items: string[] }) {
+function TagList({
+  label,
+  items,
+  styles,
+}: {
+  label: string;
+  items: string[];
+  styles: ReturnType<typeof createStyles>;
+}) {
   if (items.length === 0) return null;
   return (
     <View style={styles.fieldBlock}>
@@ -136,101 +157,102 @@ function TagList({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingBottom: spacing.xxl,
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-  },
-  overviewGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  field: {
-    minWidth: 140,
-  },
-  fieldBlock: {
-    marginTop: spacing.sm,
-  },
-  fieldLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-  },
-  fieldValue: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    marginTop: 2,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-  },
-  driveLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
-  },
-  driveLinkText: {
-    ...typography.caption,
-    color: colors.primaryText,
-    flexShrink: 1,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
-  },
-  tag: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.pill,
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-  },
-  tagText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  extractedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    padding: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  contentSearchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-  },
-  contentSearchInput: {
-    ...typography.caption,
-    color: colors.text,
-    minWidth: 140,
-    outlineStyle: 'none' as any,
-  },
-  matchCount: {
-    ...typography.tiny,
-    color: colors.textFaint,
-  },
-  extractedTextBox: {
-    padding: spacing.md,
-    paddingTop: 0,
-  },
-  extractedText: {
-    ...typography.body,
-    color: colors.textMuted,
-    lineHeight: 24,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    content: {
+      paddingBottom: spacing.xxl,
+    },
+    body: {
+      paddingHorizontal: spacing.lg,
+    },
+    overviewGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.lg,
+      marginTop: spacing.sm,
+    },
+    field: {
+      minWidth: 140,
+    },
+    fieldBlock: {
+      marginTop: spacing.sm,
+    },
+    fieldLabel: {
+      ...typography.caption,
+      color: colors.textFaint,
+    },
+    fieldValue: {
+      ...typography.bodyMedium,
+      color: colors.text,
+      marginTop: 2,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginTop: spacing.md,
+    },
+    driveLinkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: spacing.sm,
+    },
+    driveLinkText: {
+      ...typography.caption,
+      color: colors.primaryText,
+      flexShrink: 1,
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 6,
+    },
+    tag: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.pill,
+      paddingVertical: 4,
+      paddingHorizontal: spacing.sm,
+    },
+    tagText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    extractedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      padding: spacing.md,
+      paddingBottom: spacing.xs,
+    },
+    contentSearchBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+    },
+    contentSearchInput: {
+      ...typography.caption,
+      color: colors.text,
+      minWidth: 140,
+      outlineStyle: 'none' as any,
+    },
+    matchCount: {
+      ...typography.tiny,
+      color: colors.textFaint,
+    },
+    extractedTextBox: {
+      padding: spacing.md,
+      paddingTop: 0,
+    },
+    extractedText: {
+      ...typography.body,
+      color: colors.textMuted,
+      lineHeight: 24,
+    },
+  });

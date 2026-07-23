@@ -7,5 +7,5 @@ export default function Index() {
   const { status } = useAuth();
 
   if (status === 'loading') return <LoadingIndicator />;
-  return <Redirect href={status === 'signedIn' ? '/dashboard' : '/login'} />;
+  return <Redirect href={status === 'signedIn' ? '/chat' : '/login'} />;
 }

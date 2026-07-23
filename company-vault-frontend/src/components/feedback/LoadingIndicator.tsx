@@ -1,10 +1,13 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { colors, spacing } from '@/constants/theme';
+import { spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export function LoadingIndicator({ inline = false }: { inline?: boolean }) {
+  const { colors } = useTheme();
+
   return (
-    <View style={inline ? styles.inline : styles.container}>
+    <View style={[inline ? styles.inline : styles.container, !inline && { backgroundColor: colors.bg }]}>
       <ActivityIndicator color={colors.primary} />
     </View>
   );

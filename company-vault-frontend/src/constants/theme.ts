@@ -1,8 +1,43 @@
-export const colors = {
+export interface ThemeColors {
+  bg: string;
+  surface: string;
+  surfaceMuted: string;
+  surfaceSunken: string;
+  sidebarBg: string;
+  border: string;
+  borderStrong: string;
+
+  text: string;
+  textMuted: string;
+  textFaint: string;
+  textInverse: string;
+
+  primary: string;
+  primaryHover: string;
+  primarySoft: string;
+  primaryText: string;
+
+  accent: string;
+  accentSoft: string;
+
+  warning: string;
+  warningSoft: string;
+
+  danger: string;
+  dangerSoft: string;
+
+  info: string;
+  infoSoft: string;
+
+  overlay: string;
+}
+
+export const lightColors: ThemeColors = {
   bg: '#F7F7FB',
   surface: '#FFFFFF',
   surfaceMuted: '#F1F1F8',
   surfaceSunken: '#ECEBF7',
+  sidebarBg: '#F3F1FA',
   border: '#E7E6F2',
   borderStrong: '#D8D6EC',
 
@@ -29,9 +64,52 @@ export const colors = {
   infoSoft: '#E7F1FD',
 
   overlay: 'rgba(27, 23, 48, 0.45)',
-} as const;
+};
 
-export const departmentColors: Record<string, { fg: string; bg: string }> = {
+/**
+ * Neutral dark-grey dark theme: layered greys (#101012 → #212124) so elevation
+ * still reads, with the purple reserved for accents only — never backgrounds.
+ */
+export const darkColors: ThemeColors = {
+  bg: '#101012',
+  surface: '#18181B',
+  surfaceMuted: '#212124',
+  surfaceSunken: '#26262A',
+  sidebarBg: '#131316',
+  border: '#29292E',
+  borderStrong: '#38383F',
+
+  text: '#EDEDF0',
+  textMuted: '#A3A3AC',
+  textFaint: '#6F6F78',
+  textInverse: '#121214',
+
+  primary: '#8C7BF0',
+  primaryHover: '#A99DF6',
+  primarySoft: '#272337',
+  primaryText: '#A99DF6',
+
+  accent: '#38C9A8',
+  accentSoft: '#17302B',
+
+  warning: '#E3A94F',
+  warningSoft: '#332A18',
+
+  danger: '#E87474',
+  dangerSoft: '#351D1D',
+
+  info: '#6FB1E8',
+  infoSoft: '#1C2833',
+
+  overlay: 'rgba(0, 0, 0, 0.6)',
+};
+
+export interface DepartmentColor {
+  fg: string;
+  bg: string;
+}
+
+export const lightDepartmentColors: Record<string, DepartmentColor> = {
   HUMAN_RESOURCES: { fg: '#B4508B', bg: '#FBEAF3' },
   ACCOUNTING: { fg: '#3D8FE8', bg: '#E7F1FD' },
   TREASURY: { fg: '#2FA0A0', bg: '#E3F7F5' },
@@ -44,6 +122,21 @@ export const departmentColors: Record<string, { fg: string; bg: string }> = {
   ADMINISTRATION: { fg: '#7A7A7A', bg: '#F0F0F0' },
   GENERAL: { fg: '#635F7A', bg: '#F1F1F8' },
   UNKNOWN: { fg: '#9490AC', bg: '#F1F1F8' },
+};
+
+export const darkDepartmentColors: Record<string, DepartmentColor> = {
+  HUMAN_RESOURCES: { fg: '#E183BC', bg: '#33222C' },
+  ACCOUNTING: { fg: '#7FAEEA', bg: '#1E2733' },
+  TREASURY: { fg: '#5CC9C8', bg: '#182E2B' },
+  FINANCE: { fg: '#A99DF6', bg: '#272337' },
+  SALES: { fg: '#E89A5E', bg: '#322619' },
+  OPERATIONS: { fg: '#8CC888', bg: '#202B1E' },
+  PROCUREMENT: { fg: '#CBA96A', bg: '#2F2919' },
+  LEGAL: { fg: '#B49AF0', bg: '#282233' },
+  INFORMATION_TECHNOLOGY: { fg: '#6FB1E8', bg: '#1C2833' },
+  ADMINISTRATION: { fg: '#A9A9B2', bg: '#232326' },
+  GENERAL: { fg: '#A3A3AC', bg: '#212124' },
+  UNKNOWN: { fg: '#6F6F78', bg: '#212124' },
 };
 
 export const spacing = {
@@ -78,14 +171,14 @@ export const typography = {
 
 export const shadow = {
   card: {
-    shadowColor: '#241C4E',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
     shadowRadius: 16,
     elevation: 2,
   },
   popover: {
-    shadowColor: '#241C4E',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.14,
     shadowRadius: 32,

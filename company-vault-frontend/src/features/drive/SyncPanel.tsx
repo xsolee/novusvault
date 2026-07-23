@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/common/Card';
 import { formatEnumLabel } from '@/components/common/Badge';
 import { useSyncRun } from './useSync';
@@ -21,6 +22,8 @@ const STAGE_ORDER: SyncStage[] = [
 ];
 
 export function SyncPanel({ runId }: { runId: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: run } = useSyncRun(runId);
   const queryClient = useQueryClient();
 
@@ -36,11 +39,20 @@ export function SyncPanel({ runId }: { runId: string }) {
   const isDone = run.status !== 'RUNNING';
   const stageIndex = STAGE_ORDER.indexOf(run.stage);
 
+  const statusColor = (status: string) => {
+    if (status === 'FAILED') return colors.danger;
+    if (status === 'COMPLETED_WITH_ERRORS') return colors.warning;
+    if (status === 'COMPLETED') return colors.accent;
+    return colors.primary;
+  };
+
   return (
     <Card>
       <View style={styles.header}>
         <View style={[styles.statusDot, { backgroundColor: isDone ? statusColor(run.status) : colors.info }]} />
-        <Text style={typography.h3}>{isDone ? formatEnumLabel(run.status) : 'Synchronizing…'}</Text>
+        <Text style={[typography.h3, { color: colors.text }]}>
+          {isDone ? formatEnumLabel(run.status) : 'Synchronizing…'}
+        </Text>
         <Text style={styles.percent}>{run.progressPercent}%</Text>
       </View>
 
@@ -54,9 +66,9 @@ export function SyncPanel({ runId }: { runId: string }) {
       </View>
 
       <View style={styles.statsRow}>
-        <Stat label="Processed" value={`${run.processedFiles}/${run.totalFiles}`} />
-        <Stat label="Succeeded" value={String(run.successCount)} icon="checkmark-circle" color={colors.accent} />
-        <Stat label="Failed" value={String(run.failureCount)} icon="close-circle" color={colors.danger} />
+        <Stat label="Processed" value={`${run.processedFiles}/${run.totalFiles}`} styles={styles} />
+        <Stat label="Succeeded" value={String(run.successCount)} icon="checkmark-circle" color={colors.accent} styles={styles} />
+        <Stat label="Failed" value={String(run.failureCount)} icon="close-circle" color={colors.danger} styles={styles} />
       </View>
 
       <View style={styles.stageList}>
@@ -77,7 +89,19 @@ export function SyncPanel({ runId }: { runId: string }) {
   );
 }
 
-function Stat({ label, value, icon, color }: { label: string; value: string; icon?: keyof typeof Ionicons.glyphMap; color?: string }) {
+function Stat({
+  label,
+  value,
+  icon,
+  color,
+  styles,
+}: {
+  label: string;
+  value: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  color?: string;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={styles.stat}>
       {icon ? <Ionicons name={icon} size={13} color={color} style={{ marginRight: 4 }} /> : null}
@@ -87,78 +111,72 @@ function Stat({ label, value, icon, color }: { label: string; value: string; ico
   );
 }
 
-function statusColor(status: string) {
-  if (status === 'FAILED') return colors.danger;
-  if (status === 'COMPLETED_WITH_ERRORS') return colors.warning;
-  if (status === 'COMPLETED') return colors.accent;
-  return colors.primary;
-}
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  percent: {
-    ...typography.bodyMedium,
-    color: colors.textMuted,
-    marginLeft: 'auto',
-  },
-  track: {
-    height: 8,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    borderRadius: radius.pill,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: spacing.xxs,
-    marginTop: spacing.xs,
-  },
-  metaText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-    marginTop: spacing.md,
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  statValue: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    marginRight: 4,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-  },
-  stageList: {
-    marginTop: spacing.md,
-    gap: spacing.xs,
-  },
-  stageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  stageLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    percent: {
+      ...typography.bodyMedium,
+      color: colors.textMuted,
+      marginLeft: 'auto',
+    },
+    track: {
+      height: 8,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surfaceMuted,
+      marginTop: spacing.sm,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      borderRadius: radius.pill,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      gap: spacing.xxs,
+      marginTop: spacing.xs,
+    },
+    metaText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.lg,
+      marginTop: spacing.md,
+    },
+    stat: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    statValue: {
+      ...typography.bodyMedium,
+      color: colors.text,
+      marginRight: 4,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textFaint,
+    },
+    stageList: {
+      marginTop: spacing.md,
+      gap: spacing.xs,
+    },
+    stageItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    stageLabel: {
+      ...typography.caption,
+      color: colors.textFaint,
+    },
+  });

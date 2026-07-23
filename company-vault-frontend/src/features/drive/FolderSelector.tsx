@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { radius, shadow, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/common/Button';
 import { LoadingIndicator } from '@/components/feedback/LoadingIndicator';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -25,6 +26,8 @@ export function FolderSelector({
   onConfirm: (folder: DriveFolder) => void;
   confirming: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [trail, setTrail] = useState<Crumb[]>([{ id: null, name: 'My Drive' }]);
   const [selected, setSelected] = useState<DriveFolder | null>(null);
 
@@ -53,7 +56,7 @@ export function FolderSelector({
       <View style={styles.overlay}>
         <View style={[styles.dialog, shadow.popover]}>
           <View style={styles.header}>
-            <Text style={typography.h3}>Select a Google Drive folder</Text>
+            <Text style={[typography.h3, { color: colors.text }]}>Select a Google Drive folder</Text>
             <Pressable onPress={onCancel} hitSlop={8}>
               <Ionicons name="close" size={20} color={colors.textFaint} />
             </Pressable>
@@ -63,7 +66,12 @@ export function FolderSelector({
             {trail.map((crumb, index) => (
               <View key={`${crumb.id}-${index}`} style={styles.crumbGroup}>
                 <Pressable onPress={() => jumpTo(index)}>
-                  <Text style={[typography.captionMedium, index === trail.length - 1 ? styles.crumbActive : styles.crumb]}>
+                  <Text
+                    style={[
+                      typography.captionMedium,
+                      { color: index === trail.length - 1 ? colors.primaryText : colors.textFaint },
+                    ]}
+                  >
                     {crumb.name}
                   </Text>
                 </Pressable>
@@ -89,12 +97,12 @@ export function FolderSelector({
                     onPress={() => setSelected(folder)}
                     style={({ hovered }: any) => [
                       styles.row,
-                      selected?.id === folder.id && styles.rowSelected,
+                      selected?.id === folder.id && { backgroundColor: colors.primarySoft },
                       hovered && selected?.id !== folder.id && { backgroundColor: colors.surfaceMuted },
                     ]}
                   >
                     <Ionicons name="folder" size={18} color={colors.primary} />
-                    <Text style={styles.rowLabel} numberOfLines={1}>
+                    <Text style={[typography.body, { color: colors.text, flex: 1 }]} numberOfLines={1}>
                       {folder.name}
                     </Text>
                     <Pressable onPress={() => openFolder(folder)} hitSlop={8}>
@@ -107,7 +115,7 @@ export function FolderSelector({
           </View>
 
           {selected ? (
-            <Text style={styles.selectedPath} numberOfLines={1}>
+            <Text style={[typography.caption, { color: colors.primaryText, marginTop: spacing.sm }]} numberOfLines={1}>
               Selected: {trail.map((c) => c.name).join(' / ')} / {selected.name}
             </Text>
           ) : null}
@@ -127,73 +135,57 @@ export function FolderSelector({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-  },
-  dialog: {
-    width: '100%',
-    maxWidth: 460,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  breadcrumbs: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-  },
-  crumbGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  crumb: {
-    color: colors.textFaint,
-  },
-  crumbActive: {
-    color: colors.primaryText,
-  },
-  listWrap: {
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    minHeight: 120,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  rowSelected: {
-    backgroundColor: colors.primarySoft,
-  },
-  rowLabel: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-  },
-  selectedPath: {
-    ...typography.caption,
-    color: colors.primaryText,
-    marginTop: spacing.sm,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.xs,
-    marginTop: spacing.lg,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.md,
+    },
+    dialog: {
+      width: '100%',
+      maxWidth: 460,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    breadcrumbs: {
+      flexDirection: 'row',
+      marginTop: spacing.sm,
+    },
+    crumbGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    listWrap: {
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      minHeight: 120,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: spacing.xs,
+      marginTop: spacing.lg,
+    },
+  });

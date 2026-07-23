@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius, shadow, spacing } from '@/constants/theme';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { radius, shadow, spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export function Card({
   children,
@@ -11,18 +12,23 @@ export function Card({
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
 }) {
-  return <View style={[styles.card, padded && styles.padded, style]}>{children}</View>;
-}
+  const { colors } = useTheme();
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.card,
-  },
-  padded: {
-    padding: spacing.md,
-  },
-});
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderRadius: radius.lg,
+          borderWidth: 1,
+          borderColor: colors.border,
+          ...shadow.card,
+        },
+        padded && { padding: spacing.md },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}

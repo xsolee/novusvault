@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { radius, shadow, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/common/Button';
 import { Logo } from '@/components/common/Logo';
 import { useAuth } from '@/hooks/useAuth';
 
 export function LoginScreen() {
   const { signInWithGoogle } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +21,7 @@ export function LoginScreen() {
     setError(null);
     try {
       await signInWithGoogle();
-      router.replace('/dashboard');
+      router.replace('/chat');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed. Please try again.');
     } finally {
@@ -60,55 +63,56 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  appName: {
-    ...typography.h1,
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-  description: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.md,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    marginTop: spacing.sm,
-    width: '100%',
-  },
-  errorText: {
-    ...typography.caption,
-    color: colors.danger,
-    flexShrink: 1,
-  },
-  footnote: {
-    ...typography.caption,
-    color: colors.textFaint,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.lg,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.xl,
+      alignItems: 'center',
+    },
+    appName: {
+      ...typography.h1,
+      color: colors.text,
+      marginTop: spacing.md,
+    },
+    description: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.xs,
+    },
+    errorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.dangerSoft,
+      borderRadius: radius.md,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      marginTop: spacing.sm,
+      width: '100%',
+    },
+    errorText: {
+      ...typography.caption,
+      color: colors.danger,
+      flexShrink: 1,
+    },
+    footnote: {
+      ...typography.caption,
+      color: colors.textFaint,
+      textAlign: 'center',
+      marginTop: spacing.lg,
+    },
+  });

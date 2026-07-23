@@ -19,7 +19,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8091/documents/doc-1)",
       "Bash(curl -s http://localhost:8091/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8081 --max-time 5)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Artifact"
     ]
   }
 }

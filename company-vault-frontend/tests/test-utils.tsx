@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react-native';
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ThemeProvider } from '@/hooks/useTheme';
 import { ToastProvider } from '@/components/feedback/ToastProvider';
 
 const testMetrics: Metrics = {
@@ -18,9 +19,11 @@ export function renderWithProviders(ui: React.ReactElement) {
   return render(
     <SafeAreaProvider initialMetrics={testMetrics}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ToastProvider>{ui}</ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>{ui}</ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>,
   );

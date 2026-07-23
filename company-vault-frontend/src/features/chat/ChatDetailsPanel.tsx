@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { IconButton } from '@/components/common/IconButton';
 import { DepartmentBadge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -9,6 +10,8 @@ import type { ChatMessage } from '@/types/domain';
 import { CitationCard } from './CitationCard';
 
 export function ChatDetailsPanel({ latestAnswer, onClose }: { latestAnswer: ChatMessage | null; onClose: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const response = latestAnswer?.response;
 
   return (
@@ -16,7 +19,7 @@ export function ChatDetailsPanel({ latestAnswer, onClose }: { latestAnswer: Chat
       <View style={styles.header}>
         <View style={styles.headerTitle}>
           <Ionicons name="information-circle-outline" size={17} color={colors.text} />
-          <Text style={typography.h3}>Details</Text>
+          <Text style={[typography.h3, { color: colors.text }]}>Details</Text>
         </View>
         <IconButton icon="close" accessibilityLabel="Close details panel" onPress={onClose} />
       </View>
@@ -30,29 +33,33 @@ export function ChatDetailsPanel({ latestAnswer, onClose }: { latestAnswer: Chat
           />
         ) : (
           <>
-            <Section label="Detected department">
+            <Section label="Detected department" styles={styles}>
               {response.detectedDepartment ? (
                 <DepartmentBadge department={response.detectedDepartment} />
               ) : (
-                <Text style={styles.mutedText}>Not detected</Text>
+                <Text style={[typography.body, { color: colors.textFaint }]}>Not detected</Text>
               )}
             </Section>
 
             {response.detectedTopic ? (
-              <Section label="Detected topic">
-                <Text style={styles.value}>{response.detectedTopic}</Text>
+              <Section label="Detected topic" styles={styles}>
+                <Text style={[typography.body, { color: colors.text }]}>{response.detectedTopic}</Text>
               </Section>
             ) : null}
 
-            <Section label="Response type">
-              <Text style={styles.value}>{formatType(response.type)}</Text>
+            <Section label="Response type" styles={styles}>
+              <Text style={[typography.body, { color: colors.text }]}>{formatType(response.type)}</Text>
             </Section>
 
             {response.citations && response.citations.length > 0 ? (
-              <Section label={`Citations (${response.citations.length})`}>
+              <Section label={`Citations (${response.citations.length})`} styles={styles}>
                 <View style={{ gap: spacing.xs }}>
-                  {response.citations.map((citation) => (
-                    <CitationCard key={`${citation.documentId}-${citation.pageNumber ?? 0}`} citation={citation} />
+                  {response.citations.map((citation, i) => (
+                    <CitationCard
+                      key={`${citation.documentId}-${citation.pageNumber ?? 0}`}
+                      citation={citation}
+                      index={i + 1}
+                    />
                   ))}
                 </View>
               </Section>
@@ -64,7 +71,15 @@ export function ChatDetailsPanel({ latestAnswer, onClose }: { latestAnswer: Chat
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  children,
+  styles,
+}: {
+  label: string;
+  children: React.ReactNode;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>
@@ -80,47 +95,40 @@ function formatType(type: string) {
     .join(' ');
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: 300,
-    borderLeftWidth: 1,
-    borderLeftColor: colors.border,
-    backgroundColor: colors.surface,
-    height: '100%',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  body: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    ...typography.tiny,
-    color: colors.textFaint,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 6,
-  },
-  value: {
-    ...typography.body,
-    color: colors.text,
-  },
-  mutedText: {
-    ...typography.body,
-    color: colors.textFaint,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      width: 300,
+      borderLeftWidth: 1,
+      borderLeftColor: colors.border,
+      backgroundColor: colors.surface,
+      height: '100%',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    body: {
+      padding: spacing.md,
+    },
+    section: {
+      marginBottom: spacing.md,
+    },
+    sectionLabel: {
+      ...typography.tiny,
+      color: colors.textFaint,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginBottom: 6,
+    },
+  });

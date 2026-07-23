@@ -1,8 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, typography } from '@/constants/theme';
+import { Text, View } from 'react-native';
+import { typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+  const { colors } = useTheme();
   const initials = name
     .split(' ')
     .map((p) => p[0])
@@ -11,18 +13,21 @@ export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
     .toUpperCase();
 
   return (
-    <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Text style={[typography.captionMedium, { color: colors.primaryText, fontSize: size * 0.4 }]}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: colors.primarySoft,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={[typography.captionMedium, { color: colors.primaryText, fontSize: size * 0.38 }]}>
         {initials}
       </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  circle: {
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

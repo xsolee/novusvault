@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'md' | 'sm';
@@ -29,19 +30,35 @@ export function Button({
   fullWidth = false,
   style,
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isDisabled = disabled || loading;
+
+  const textColor = {
+    primary: colors.textInverse,
+    secondary: colors.text,
+    ghost: colors.primaryText,
+    danger: colors.danger,
+  }[variant];
+
+  const hoverBg: Record<Variant, string> = {
+    primary: colors.primaryHover,
+    secondary: colors.surfaceMuted,
+    ghost: colors.surfaceMuted,
+    danger: colors.dangerSoft,
+  };
 
   return (
     <Pressable
       onPress={isDisabled ? undefined : onPress}
       style={({ pressed, hovered }: any) => [
         styles.base,
-        variantStyles[variant],
+        styles[variant],
         size === 'sm' && styles.sm,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
         pressed && !isDisabled && { opacity: 0.85 },
-        hovered && !isDisabled && webHoverStyles[variant],
+        hovered && !isDisabled && { backgroundColor: hoverBg[variant] },
         style,
       ]}
     >
@@ -54,11 +71,11 @@ export function Button({
               <Ionicons
                 name={icon}
                 size={size === 'sm' ? 15 : 17}
-                color={textStyles[variant].color as string}
+                color={textColor}
                 style={{ marginRight: spacing.xxs }}
               />
             ) : null}
-            <Text style={[typography.bodyMedium, textStyles[variant], size === 'sm' && { fontSize: 13 }]}>
+            <Text style={[typography.bodyMedium, { color: textColor }, size === 'sm' && { fontSize: 13 }]}>
               {label}
             </Text>
           </>
@@ -68,47 +85,31 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.md,
-    paddingVertical: 11,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sm: {
-    paddingVertical: 8,
-    paddingHorizontal: spacing.sm,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: colors.primary },
-  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  ghost: { backgroundColor: 'transparent' },
-  danger: { backgroundColor: colors.dangerSoft },
-});
-
-const textStyles = StyleSheet.create({
-  primary: { color: colors.textInverse },
-  secondary: { color: colors.text },
-  ghost: { color: colors.primaryText },
-  danger: { color: colors.danger },
-});
-
-const webHoverStyles: Record<Variant, ViewStyle> = {
-  primary: { backgroundColor: colors.primaryHover },
-  secondary: { backgroundColor: colors.surfaceMuted },
-  ghost: { backgroundColor: colors.surfaceMuted },
-  danger: { backgroundColor: '#F9DADA' },
-};
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    base: {
+      borderRadius: radius.md,
+      paddingVertical: 11,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    primary: { backgroundColor: colors.primary },
+    secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong },
+    ghost: { backgroundColor: 'transparent' },
+    danger: { backgroundColor: colors.dangerSoft },
+    sm: {
+      paddingVertical: 8,
+      paddingHorizontal: spacing.sm,
+    },
+    fullWidth: {
+      width: '100%',
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  });

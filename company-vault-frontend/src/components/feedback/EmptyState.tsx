@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/common/Button';
 
 export function EmptyState({
@@ -17,13 +18,17 @@ export function EmptyState({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
-      <View style={styles.iconWrap}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.surfaceMuted }]}>
         <Ionicons name={icon} size={26} color={colors.textFaint} />
       </View>
-      <Text style={[typography.h3, styles.title]}>{title}</Text>
-      {description ? <Text style={[typography.body, styles.description]}>{description}</Text> : null}
+      <Text style={[typography.h3, styles.title, { color: colors.text }]}>{title}</Text>
+      {description ? (
+        <Text style={[typography.body, styles.description, { color: colors.textMuted }]}>{description}</Text>
+      ) : null}
       {actionLabel && onAction ? (
         <Button label={actionLabel} onPress={onAction} variant="secondary" style={{ marginTop: spacing.sm }} />
       ) : null}
@@ -42,17 +47,14 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   title: {
-    color: colors.text,
     textAlign: 'center',
   },
   description: {
-    color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxs,
     maxWidth: 360,

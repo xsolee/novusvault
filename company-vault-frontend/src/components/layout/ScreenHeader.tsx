@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export function ScreenHeader({
   title,
@@ -11,11 +12,15 @@ export function ScreenHeader({
   subtitle?: string;
   right?: React.ReactNode;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
-        <Text style={typography.h1}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <Text style={[typography.h1, { color: colors.text }]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[typography.body, { color: colors.textMuted, marginTop: 2 }]}>{subtitle}</Text>
+        ) : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
     </View>
@@ -31,11 +36,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     gap: spacing.md,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: 2,
   },
   right: {
     flexDirection: 'row',
