@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is a **greenfield monorepo** for an application called **Company Vault**. As of this
-writing there is no working implementation yet — this file documents the agreed architecture and
-constraints from the project specification so that implementation work stays consistent across sessions.
+This repository holds **Company Vault**, a monorepo whose architecture and constraints are documented
+here so implementation work stays consistent across sessions. Both apps have a working implementation:
+the backend's modules, providers, and schema are built out, and the frontend's `src/services/*` call the
+real backend (see "Cross-cutting notes" for what's still stubbed/deferred rather than mock-only).
 
-Build order: **frontend first, then backend.** The frontend is designed to run fully against mocked
-services, so it can be built and demoed before any backend endpoint exists. The backend is then built to
-match the same API/type contract the frontend mocks already define.
+Build order was **frontend first, then backend**: the frontend was built to run fully against mocked
+services so it could be demoed before any backend endpoint existed, then the backend was built to match
+that same API/type contract. `src/mocks/*` still exists as Jest test fixtures, not the runtime path.
 
 ## What Company Vault is
 
@@ -76,9 +77,12 @@ src/
 Key rules:
 - Routing/screen files under `app/` should stay thin; real logic lives in `src/features/*`.
 - All backend calls go through `src/services/*`; no screen calls Axios or the Drive API directly.
-- During frontend-only development, `src/services/*` are backed by `src/mocks/*` with artificial
-  latency, not real network calls. Mock services must be swappable for real ones without changing
-  callers.
+- `src/services/*` call the real backend via `apiClient` (`src/services/apiClient.ts`). `src/mocks/*`
+  remains only as Jest test fixtures — not the runtime implementation. Exception: real Google OAuth
+  login has no frontend completion path yet (the backend's `/auth/google/callback` returns raw JSON to
+  whatever browser tab Google redirects to, with no frontend callback route to intercept it), so
+  `useAuth`'s `signInWithGoogle` currently calls the backend's `/auth/dev-login` route instead — real
+  Google login is a follow-up that needs a backend-side redirect change first.
 - The frontend **never** receives or stores Google provider tokens — only the Company Vault app
   session token, stored via Expo SecureStore (or the platform-appropriate equivalent on web).
 - Navigation: bottom tabs on mobile, left sidebar on web/large screens. Primary sections: Dashboard,
@@ -104,13 +108,17 @@ document delete/archive/bulk actions, document-type-specific detail forms, heavy
 
 ### Stack
 Python 3.12+, FastAPI (async where practical), Pydantic v2, SQLAlchemy 2 (async), Alembic, PostgreSQL +
-pgvector, Redis, Dramatiq, Google OAuth 2.0 + Google Drive API, S3-compatible object storage (MinIO
-locally), Pytest, Docker Compose. Strict type hints throughout.
+pgvector (hosted on Supabase), Redis, Dramatiq, Google OAuth 2.0 + Google Drive API, S3-compatible object
+storage (Supabase Storage), Ollama (self-hosted in Docker — default LLM + embeddings provider) with
+Anthropic's Claude API as the swappable hosted LLM alternative, Pytest, Docker Compose. Strict type hints
+throughout.
 
-### Commands (once scaffolded)
+### Commands
 ```bash
-docker compose up -d        # Postgres+pgvector, Redis, MinIO, API, worker
-alembic upgrade head         # apply migrations
+docker compose up -d        # Redis, Ollama (+ model pull), API, worker.
+                             # Postgres/pgvector and object storage are hosted on Supabase, not local
+                             # containers — DATABASE_URL and S3_* in .env point at the real project.
+alembic upgrade head         # apply migrations (against the Supabase DATABASE_URL)
 uvicorn app.main:app --reload
 pytest                       # full suite
 pytest path/to/test_file.py::test_name   # single test
@@ -196,8 +204,20 @@ general model knowledge masquerade as a company fact.
 
 ### Provider abstractions
 `providers/llm`, `providers/embeddings`, `providers/ocr`, `providers/storage` each define an interface
-with a mock implementation for tests, so vendor code (OpenAI/Anthropic/Gemini, OCR engine, S3/MinIO) never
-leaks into `modules/*`.
+with a mock implementation for tests, so vendor code (OpenAI/Anthropic/Gemini, OCR engine, S3) never
+leaks into `modules/*`. LLM/embeddings default to a real Ollama provider (running in Docker) in normal
+operation, not mock — `LLM_PROVIDER=anthropic` (+ `ANTHROPIC_API_KEY`) swaps to the hosted Claude API
+without touching `modules/*`. `EMBEDDING_PROVIDER` has no hosted alternative wired up yet (see
+"Infrastructure decisions" below for why that's not just a config flip).
+
+### Infrastructure decisions (don't "fix" these without reading why)
+- **Supabase: direct connection (port 5432), not the transaction pooler (6543).** At single-admin MVP
+  scale, pgbouncer's transaction-mode incompatibility with asyncpg's prepared-statement cache isn't worth
+  taking on for a workload nowhere near the pooler's actual purpose. Revisit only if connection-count
+  pressure appears (e.g. multiple `api`/`worker` replicas).
+- **`document_embeddings.embedding` is `vector(768)`, pinned to Ollama's `nomic-embed-text` output size —
+  not the more common 1536.** Switching to a 1536-dim provider (e.g. `EMBEDDING_PROVIDER=openai`) later
+  needs a schema migration and a full re-embed of every existing chunk, not just a config change.
 
 ### API surface
 ```text
@@ -247,6 +267,8 @@ permissions.
   to be the *same* shapes described above — when building the backend, check the frontend's `src/types/*`
   and mocks first rather than re-deriving the contract from the spec text alone.
 - Both apps ship a `.env.example`: frontend needs `EXPO_PUBLIC_API_BASE_URL` and
-  `EXPO_PUBLIC_APP_NAME`; backend needs Google OAuth credentials/redirect URIs, `DATABASE_URL`,
-  `REDIS_URL`, JWT secrets/expiries, S3/MinIO credentials, and `LLM_*` / `EMBEDDING_*` / `OCR_PROVIDER`
-  settings.
+  `EXPO_PUBLIC_APP_NAME`; backend needs Google OAuth credentials/redirect URIs, a Supabase
+  `DATABASE_URL` (direct connection) + Supabase Storage's S3-compatible credentials (`S3_*`,
+  separate from the DB password), `REDIS_URL`, JWT secrets/expiries, `OLLAMA_*` (base URL + model
+  names, default provider), `ANTHROPIC_*` (only needed if `LLM_PROVIDER=anthropic`), and
+  `LLM_PROVIDER` / `EMBEDDING_PROVIDER` / `OCR_PROVIDER` selectors.

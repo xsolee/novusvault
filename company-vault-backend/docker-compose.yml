@@ -1,20 +1,4 @@
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-company_vault}
-      POSTGRES_USER: ${POSTGRES_USER:-company_vault}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-company_vault}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-company_vault} -d ${POSTGRES_DB:-company_vault}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   redis:
     image: redis:7-alpine
     ports:
@@ -25,65 +9,61 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-company_vault}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-company_vault_minio_secret}
+  ollama:
+    image: ollama/ollama:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "11434:11434"
     volumes:
-      - minio_data:/data
+      - ollama_data:/root/.ollama
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
 
-  minio-init:
-    image: minio/mc:latest
+  # One-shot: pulls both models, then sends one throwaway request per model so the
+  # api/worker containers never hit a genuinely cold (unloaded-from-RAM) model on their
+  # first real request. Mirrors the minio-init sidecar pattern this file used to have.
+  ollama-init:
+    image: ollama/ollama:latest
     depends_on:
-      minio:
+      ollama:
         condition: service_healthy
     environment:
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-company_vault}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-company_vault_minio_secret}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-company-vault-documents}
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY &&
-      mc mb -p local/$$S3_BUCKET_NAME || true
-      "
+      OLLAMA_HOST: http://ollama:11434
+      LLM_MODEL: ${OLLAMA_LLM_MODEL:-llama3.1:8b}
+      EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        ollama pull "$$LLM_MODEL"
+        ollama pull "$$EMBEDDING_MODEL"
+        ollama run "$$LLM_MODEL" "hi" > /dev/null || true
+        ollama run "$$EMBEDDING_MODEL" "hi" > /dev/null || true
 
+  # Postgres (pgvector) and object storage are hosted on Supabase, not local containers —
+  # DATABASE_URL and S3_* in .env point at the real Supabase project.
   migrate:
     build:
       context: .
       target: migrate
     env_file: .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://company_vault:company_vault@postgres:5432/company_vault}
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   api:
     build:
       context: .
       target: api
     env_file: .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://company_vault:company_vault@postgres:5432/company_vault}
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
     healthcheck:
@@ -97,18 +77,13 @@ services:
       context: .
       target: worker
     env_file: .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://company_vault:company_vault@postgres:5432/company_vault}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
 
 volumes:
-  postgres_data:
-  minio_data:
+  ollama_data:

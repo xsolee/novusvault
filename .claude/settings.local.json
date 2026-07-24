@@ -26,7 +26,12 @@
       "PowerShell(Invoke-WebRequest -Uri http://localhost:8080 -UseBasicParsing | Select-Object -ExpandProperty Content)",
       "PowerShell(Out-Null *)",
       "PowerShell(docker run *)",
-      "PowerShell(Select-String *)"
+      "PowerShell(Select-String *)",
+      "Bash(cd company-vault-backend *)",
+      "Bash(cd company-vault-frontend *)",
+      "PowerShell(Start-Process \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(echo \"READY: $\\(docker version --format '{{.Server.Version}}'\\)\")",
+      "Bash(exit 0)"
     ]
   }
 }

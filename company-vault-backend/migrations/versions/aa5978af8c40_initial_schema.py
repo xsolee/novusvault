@@ -212,7 +212,7 @@ def upgrade() -> None:
     op.create_table('document_embeddings',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('chunk_id', sa.Uuid(), nullable=False),
-    sa.Column('embedding', pgvector.sqlalchemy.vector.VECTOR(dim=1536), nullable=False),
+    sa.Column('embedding', pgvector.sqlalchemy.vector.VECTOR(dim=768), nullable=False),
     sa.Column('embedding_model', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['chunk_id'], ['document_chunks.id'], ondelete='CASCADE'),

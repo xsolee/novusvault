@@ -40,9 +40,17 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "company-vault-documents"
     s3_region: str = "us-east-1"
 
-    llm_provider: str = "mock"
-    embedding_provider: str = "mock"
+    llm_provider: str = "ollama"
+    embedding_provider: str = "ollama"
     ocr_provider: str = "mock"
+
+    ollama_base_url: str = "http://ollama:11434"
+    ollama_llm_model: str = "llama3.1:8b"
+    ollama_embedding_model: str = "nomic-embed-text"
+    ollama_request_timeout_seconds: int = 120
+
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-opus-4-8"
 
     chat_department_confidence_threshold: float = 0.65
     chat_department_gap_threshold: float = 0.15

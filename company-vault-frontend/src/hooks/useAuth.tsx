@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AdminUser } from '@/types/domain';
 import { authService } from '@/services/authService';
-import { setApiAuthToken } from '@/services/apiClient';
+import { setApiAuthToken, setRefreshHandler } from '@/services/apiClient';
 import { sessionStorage } from '@/utils/sessionStorage';
 
 interface AuthContextValue {
@@ -19,6 +19,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const signOut = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Best-effort — still clear local session state even if the request fails.
+    }
+    await sessionStorage.clearToken();
+    await sessionStorage.clearRefreshToken();
+    setApiAuthToken(null);
+    setAdmin(null);
+    setStatus('signedOut');
+  }, []);
+
+  useEffect(() => {
+    setRefreshHandler(async () => {
+      const storedRefreshToken = await sessionStorage.getRefreshToken();
+      if (!storedRefreshToken) return null;
+      try {
+        const session = await authService.refresh(storedRefreshToken);
+        await sessionStorage.setToken(session.token);
+        await sessionStorage.setRefreshToken(session.refreshToken);
+        setApiAuthToken(session.token);
+        return session.token;
+      } catch {
+        return null;
+      }
+    });
+    return () => setRefreshHandler(null);
+  }, []);
+
   useEffect(() => {
     (async () => {
       const token = await sessionStorage.getToken();
@@ -28,11 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         setApiAuthToken(token);
-        const current = await authService.getCurrentAdmin(token);
+        const current = await authService.getCurrentAdmin();
         setAdmin(current);
         setStatus('signedIn');
       } catch {
         await sessionStorage.clearToken();
+        await sessionStorage.clearRefreshToken();
         setApiAuthToken(null);
         setStatus('signedOut');
       }
@@ -42,8 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     setError(null);
     try {
-      const session = await authService.loginWithGoogle();
+      const session = await authService.devLogin();
       await sessionStorage.setToken(session.token);
+      await sessionStorage.setRefreshToken(session.refreshToken);
       setApiAuthToken(session.token);
       setAdmin(session.admin);
       setStatus('signedIn');
@@ -51,14 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.');
       throw e;
     }
-  }, []);
-
-  const signOut = useCallback(async () => {
-    await authService.logout();
-    await sessionStorage.clearToken();
-    setApiAuthToken(null);
-    setAdmin(null);
-    setStatus('signedOut');
   }, []);
 
   const value = useMemo(

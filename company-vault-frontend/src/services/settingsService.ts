@@ -1,8 +1,9 @@
 import type { AppSettings } from '@/types/domain';
-import { mockGetSettings } from '@/mocks/settingsMock';
+import { apiClient } from './apiClient';
 
 export const settingsService = {
   async get(): Promise<AppSettings> {
-    return mockGetSettings();
+    const { data } = await apiClient.get<AppSettings>('/settings');
+    return data;
   },
 };

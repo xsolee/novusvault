@@ -6,11 +6,11 @@ from app.core.config import get_settings
 settings = get_settings()
 
 
-class MinIOStorageProvider:
-    """Real S3-compatible implementation (MinIO locally, any S3-compatible
-    endpoint in production) — free to run in Docker Compose, so unlike
-    llm/embeddings/ocr there's no mock variant for the running app (unit
-    tests fake the Protocol directly instead, see tests/conftest.py)."""
+class S3StorageProvider:
+    """Real S3-compatible implementation — Supabase Storage by default config, but works
+    against any S3-compatible endpoint (including a local MinIO for offline dev) via the same
+    env vars. Unlike llm/embeddings/ocr there's no mock variant for the running app (unit tests
+    fake the Protocol directly instead, see tests/conftest.py)."""
 
     def __init__(self) -> None:
         self._session = aioboto3.Session()

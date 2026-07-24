@@ -1,14 +1,19 @@
 import type { SyncRun } from '@/types/domain';
-import { mockGetLatestSyncRun, mockGetSyncRun, mockStartSync } from '@/mocks/syncMock';
+import { apiClient } from './apiClient';
 
 export const syncService = {
   async start(): Promise<SyncRun> {
-    return mockStartSync();
+    const { data } = await apiClient.post<SyncRun>('/sync');
+    return data;
   },
   async get(id: string): Promise<SyncRun> {
-    return mockGetSyncRun(id);
+    const { data } = await apiClient.get<SyncRun>(`/sync/${id}`);
+    return data;
   },
   async getLatest(): Promise<SyncRun | null> {
-    return mockGetLatestSyncRun();
+    const { data } = await apiClient.get<{ items: SyncRun[] }>('/sync', {
+      params: { page: 1, pageSize: 1 },
+    });
+    return data.items[0] ?? null;
   },
 };

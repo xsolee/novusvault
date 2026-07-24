@@ -11,6 +11,10 @@ settings = get_settings()
 def get_embedding_provider() -> EmbeddingProvider:
     if settings.embedding_provider == "mock":
         return MockEmbeddingProvider()
+    if settings.embedding_provider == "ollama":
+        from app.providers.embeddings.ollama_provider import OllamaEmbeddingProvider
+
+        return OllamaEmbeddingProvider()  # type: ignore[return-value]
     if settings.embedding_provider == "openai":
         from app.providers.embeddings.openai_provider import OpenAIEmbeddingProvider
 

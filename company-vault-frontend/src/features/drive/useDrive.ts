@@ -1,3 +1,4 @@
+import { Linking } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { driveService } from '@/services/driveService';
 import type { DriveFolder } from '@/types/domain';
@@ -11,11 +12,15 @@ export function useDriveStatus() {
   return useQuery({ queryKey: driveKeys.status, queryFn: driveService.getStatus });
 }
 
+// Resolves once the browser has been told to navigate to Google — NOT once the
+// connection is actually established. The real status change lands later via the
+// `/drive?status=connected` redirect, which DriveScreen watches for and refetches on.
 export function useConnectDrive() {
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: driveService.connect,
-    onSuccess: (data) => queryClient.setQueryData(driveKeys.status, data),
+    mutationFn: async () => {
+      const url = await driveService.getConnectUrl();
+      await Linking.openURL(url);
+    },
   });
 }
 

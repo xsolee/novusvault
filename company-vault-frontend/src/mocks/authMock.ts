@@ -14,7 +14,7 @@ export async function mockLoginWithGoogle(): Promise<AuthSession> {
     failNextLogin = false;
     throw new Error('Google sign-in was cancelled or failed. Please try again.');
   }
-  return { token: 'mock-session-token', admin: mockAdmin };
+  return { token: 'mock-session-token', refreshToken: 'mock-refresh-token', admin: mockAdmin };
 }
 
 export async function mockGetCurrentAdmin(token: string) {

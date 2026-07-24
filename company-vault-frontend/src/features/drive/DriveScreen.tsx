@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { radius, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Card } from '@/components/common/Card';
@@ -24,9 +25,24 @@ export function DriveScreen() {
   const selectFolderMutation = useSelectDriveFolder();
   const startSync = useStartSync();
   const toast = useToast();
+  const params = useLocalSearchParams<{ status?: string }>();
 
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false);
+
+  // Handles landing back here after the Google OAuth redirect round trip
+  // (backend redirects to `${frontendDriveCallbackUrl}?status=connected|failed`).
+  const handledRedirectRef = useRef(false);
+  useEffect(() => {
+    if (handledRedirectRef.current || !params.status) return;
+    handledRedirectRef.current = true;
+    if (params.status === 'connected') {
+      toast.show('Google Drive connected.', 'success');
+      refetch();
+    } else if (params.status === 'failed') {
+      toast.show('Could not connect to Google Drive.', 'error');
+    }
+  }, [params.status, refetch, toast]);
 
   if (isLoading) return <LoadingIndicator />;
   if (isError || !drive) return <ErrorState onRetry={refetch} />;
@@ -37,9 +53,8 @@ export function DriveScreen() {
   const handleConnect = async () => {
     try {
       await connectMutation.mutateAsync();
-      toast.show('Google Drive connected.', 'success');
     } catch {
-      toast.show('Could not connect to Google Drive.', 'error');
+      toast.show('Could not open Google sign-in.', 'error');
     }
   };
 

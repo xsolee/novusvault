@@ -11,6 +11,10 @@ settings = get_settings()
 def get_llm_provider() -> LLMProvider:
     if settings.llm_provider == "mock":
         return MockLLMProvider()
+    if settings.llm_provider == "ollama":
+        from app.providers.llm.ollama_provider import OllamaLLMProvider
+
+        return OllamaLLMProvider()  # type: ignore[return-value]
     if settings.llm_provider == "openai":
         from app.providers.llm.openai_provider import OpenAILLMProvider
 

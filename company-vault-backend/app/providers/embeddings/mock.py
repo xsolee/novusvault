@@ -10,7 +10,7 @@ class MockEmbeddingProvider:
     Postgres full-text half of the hybrid query; EMBEDDING_PROVIDER=openai
     restores genuine semantic similarity via the same interface."""
 
-    dimension = 1536
+    dimension = 768
 
     async def embed_text(self, text: str) -> list[float]:
         seed = int(hashlib.sha256(text.encode()).hexdigest(), 16) % (2**32)

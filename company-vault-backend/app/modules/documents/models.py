@@ -69,6 +69,6 @@ class DocumentEmbedding(Base):
     chunk_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("document_chunks.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    embedding: Mapped[list[float]] = mapped_column(Vector(1536), nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(768), nullable=False)
     embedding_model: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

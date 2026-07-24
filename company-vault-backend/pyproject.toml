@@ -29,6 +29,7 @@ dependencies = [
   "pillow>=10.4",
   "slowapi>=0.1.9",
   "structlog>=24.4",
+  "anthropic>=0.40",
 ]
 
 [project.optional-dependencies]
